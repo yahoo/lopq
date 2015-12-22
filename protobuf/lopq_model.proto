@@ -1,0 +1,41 @@
+// Copyright 2015, Yahoo Inc.
+// Licensed under the terms of the Apache License, Version 2.0. See the LICENSE file associated with the project for terms.
+
+// define a namespace for protobuffer
+package com.flickr.vision.lopq;
+
+// options for how java class should be built and packaged
+option java_package = "com.flickr.vision.lopq";
+option java_outer_classname = "LOPQModelParameters";
+option optimize_for = SPEED;
+
+
+/////////////////////////////////////////////////////////////////
+// GENERIC TYPES
+
+message Vector {
+    repeated float values = 1 [packed = true];
+}
+
+message Matrix {
+    repeated float values = 1 [packed = true];
+    repeated uint32 shape = 2;
+}
+
+/////////////////////////////////////////////////////////////////
+//  LOPQ PARAMS
+
+// lopq model params
+// file extension: .lopq
+message LOPQModelParams {
+
+    optional uint32 D = 1;                  // dimensionality of original vectors
+    optional uint32 V = 2;                  // number of coarse quantizer centroids
+    optional uint32 M = 3;                  // number of subvectors
+    optional uint32 num_subquantizers = 4;  // number of subquantizer clusters
+
+    repeated Matrix Cs = 5;                 // coarse quantizer centroids - 2 of these; size V x (D/2)
+    repeated Matrix Rs = 6;                 // rotations - 2 * V of these, each size D/2 x D/2
+    repeated Vector mus = 7;                // residual means - 2 * V of these, each size D/2
+    repeated Matrix subs = 8;               // subquantizer centroids - M of these, each size num_subquantizers x (D/2))
+}
