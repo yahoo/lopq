@@ -1,0 +1,17 @@
+language: python
+python: 2.7
+env:
+  - TOX_ENV=py26
+  - TOX_ENV=py27
+install:
+  - sudo apt-get update -qq
+  - cd python/
+  - pip install --upgrade pip setuptools tox virtualenv coveralls
+script:
+  - cd python/
+  - tox -v -v -e $TOX_ENV
+after_success:
+  coveralls
+after_failure:
+  - for X in .tox/$TOX_ENV/log/*; do echo "$X\n"; cat "$X"; echo "\n\n"; done
+  - echo "pip.log\n"; cat $HOME/.pip/pip.log
