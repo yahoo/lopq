@@ -2,6 +2,12 @@
 
 This module implements training and testing of LOPQ models along with a variety of other utilities useful for evaluation and data management. It includes a simple implementation of approximate nearest neighbor search with an LOPQ index.
 
+## Installation
+
+```python
+pip install lopq
+```
+
 ## Usage
 
 ```python
