@@ -33,7 +33,7 @@ setup_arguments = {
         'lopq': ['package_metadata.json']
     },
     'include_package_data': True,
-    'install_requires': ['protobuf==2.6.1', 'numpy==1.10.1', 'scipy==0.16.1', 'scikit-learn==0.17']
+    'install_requires': ['protobuf>=2.6', 'numpy>=1.10', 'scipy>=0.15', 'scikit-learn>=0.15']
 }
 
 

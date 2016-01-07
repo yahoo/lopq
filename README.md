@@ -1,3 +1,8 @@
+
+[![Build Status](https://travis-ci.org/yahoo/lopq.svg?branch=master)](https://travis-ci.org/yahoo/lopq)
+
+[![Coverage Status](https://coveralls.io/repos/yahoo/lopq/badge.svg?branch=master&service=github)](https://coveralls.io/github/yahoo/lopq?branch=master)
+
 # Locally Optimized Product Quantization
 
 This is Python training and testing code for Locally Optimized Product Quantization (LOPQ) models, as well as Spark scripts to scale training to hundreds of millions of vectors. The resulting model can be used in Python with code provided here or deployed via a Protobuf format to, e.g., search backends for high performance approximate nearest neighbor search.
