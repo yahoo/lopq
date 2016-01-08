@@ -20,6 +20,7 @@ The `train_pca.py` script is provided to compute PCA parameters on Spark. It wil
 | --data_udf                    | None    | optional module name contained a `udf` function to load training data          |
 | --seed                        | None    | optional random seed                                                           |
 | --sampling_ratio              | 1.0     | proportion of data to sample for training                                      |
+| --agg_depth                   | 4       | depth of tree aggregation for computing covariance - increase if you have driver memory issues |
 | --output                      | None    | hdfs output path                                                               |
 
 
