@@ -58,7 +58,7 @@ def main(sc, args, data_load_fn=default_data_loading):
     summed_covar = d.treeAggregate(np.zeros((D, D)), seqOp, combOp, depth=2)
 
     A = summed_covar / (count - 1) - np.outer(mu, mu)
-    E, P = np.linalg.eig(A)
+    E, P = np.linalg.eigh(A)
 
     params = {
         'mu': mu,
