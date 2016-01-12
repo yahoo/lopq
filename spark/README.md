@@ -4,7 +4,7 @@ This is an implementation of LOPQ training for [Apache Spark](https://spark.apac
 
 #### A note about Spark environments
 
-The following usage examples assume that you have a well configured Spark environment suited to the available hardware. Additionally, we assume that the python environment available on both the Spark driver and executors contains all the necessary dependencies, namely the modules listed in `python/requirements.txt` as well as the `lopq` module itself. The [Anaconda](https://www.continuum.io/why-anaconda) environment is a good starting point. At the time of writing, it contains all required dependencies by default except the `protobuf` module, which can be easily installed. To distribute the `lopq` module itself, you could either install it into the environment running on your Spark cluster, or submit it with the Spark job. For example, you can zip the module from the repository root (`zip -r lopq.zip python/lopq`) and then submit this zip file with the `--py-files` argument. More information about submitting jobs to Spark is available [here](https://spark.apache.org/docs/latest/submitting-applications.html).
+The following usage examples assume that you have a well configured Spark environment suited to the available hardware. Additionally, we assume that the python environment available on both the Spark driver and executors contains all the necessary dependencies, namely the modules listed in `python/requirements.txt` as well as the `lopq` module itself. The [Anaconda](https://www.continuum.io/why-anaconda) environment is a good starting point. At the time of writing, it contains all required dependencies by default except the `protobuf` module, which can be easily installed. To distribute the `lopq` module itself, you could either install it into the environment running on your Spark cluster, or submit it with the Spark job. For example, you can zip the module from the `python/` directory (`zip -r lopq.zip lopq/`) and then submit this zip file with the `--py-files` argument. More information about submitting jobs to Spark is available [here](https://spark.apache.org/docs/latest/submitting-applications.html).
 
 ## PCA Training
 
@@ -20,6 +20,7 @@ The `train_pca.py` script is provided to compute PCA parameters on Spark. It wil
 | --data_udf                    | None    | optional module name contained a `udf` function to load training data          |
 | --seed                        | None    | optional random seed                                                           |
 | --sampling_ratio              | 1.0     | proportion of data to sample for training                                      |
+| --agg_depth                   | 4       | depth of tree aggregation for computing covariance - increase if you have driver memory issues |
 | --output                      | None    | hdfs output path                                                               |
 
 
