@@ -216,6 +216,18 @@ def test_searcher():
     assert_equal(len(retrieved), 12)
     assert_equal(visited, 3)
 
+    retrieved, visited = searcher.search(q)
+    assert_equal(len(retrieved), 10)
+    assert_equal(visited, 3)
+
     retrieved, visited = searcher.get_result_quota(q, quota=20)
     assert_equal(len(retrieved), 28)
+    assert_equal(visited, 5)
+
+    retrieved, visited = searcher.search(q, quota=20)
+    assert_equal(len(retrieved), 20)
+    assert_equal(visited, 5)
+
+    retrieved, visited = searcher.search(q, quota=20, limit=10)
+    assert_equal(len(retrieved), 10)
     assert_equal(visited, 5)

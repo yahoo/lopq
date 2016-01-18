@@ -202,7 +202,7 @@ class LOPQSearcher(object):
 
         return results
 
-    def search(self, x, quota=10, with_dists=False):
+    def search(self, x, quota=10, limit=None, with_dists=False):
         """
         Return euclidean distance ranked results, along with the number of cells
         traversed to fill the quota.
@@ -210,7 +210,9 @@ class LOPQSearcher(object):
         :param ndarray x:
             a query vector
         :param int quota:
-            the number of desired results
+            the number of desired results to rank
+        :param int limit:
+            the number of desired results to return - defaults to quota
         :param bool with_dists:
             boolean indicating whether result items should be returned with their distance
 
@@ -227,6 +229,11 @@ class LOPQSearcher(object):
 
         # Sort by distance
         results = sorted(results, key=lambda d: d[0])
+
+        # Limit number returned
+        if limit is None:
+            limit = quota
+        results = results[:limit]
 
         if with_dists:
             Result = namedtuple('Result', ['id', 'code', 'dist'])
