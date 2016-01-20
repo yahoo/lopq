@@ -207,27 +207,38 @@ def test_searcher():
     data = pkl.load(open(relpath('./testdata/test_searcher_data.pkl')))
     m = LOPQModel.load_proto(relpath('./testdata/random_test_model.lopq'))
 
-    searcher = LOPQSearcher(m)
-    searcher.add_data(data)
+    # Helper to perform battery of tests
+    def test_searcher_instance(searcher, q):
+        retrieved, visited = searcher.get_result_quota(q)
+        assert_equal(len(retrieved), 12)
+        assert_equal(visited, 3)
+
+        retrieved, visited = searcher.search(q)
+        assert_equal(len(retrieved), 10)
+        assert_equal(visited, 3)
+
+        retrieved, visited = searcher.get_result_quota(q, quota=20)
+        assert_equal(len(retrieved), 28)
+        assert_equal(visited, 5)
+
+        retrieved, visited = searcher.search(q, quota=20)
+        assert_equal(len(retrieved), 20)
+        assert_equal(visited, 5)
+
+        retrieved, visited = searcher.search(q, quota=20, limit=10)
+        assert_equal(len(retrieved), 10)
+        assert_equal(visited, 5)
 
     q = np.ones(8)
 
-    retrieved, visited = searcher.get_result_quota(q)
-    assert_equal(len(retrieved), 12)
-    assert_equal(visited, 3)
+    # Test add_data
+    searcher = LOPQSearcher(m)
+    searcher.add_data(data)
+    test_searcher_instance(searcher, q)
 
-    retrieved, visited = searcher.search(q)
-    assert_equal(len(retrieved), 10)
-    assert_equal(visited, 3)
-
-    retrieved, visited = searcher.get_result_quota(q, quota=20)
-    assert_equal(len(retrieved), 28)
-    assert_equal(visited, 5)
-
-    retrieved, visited = searcher.search(q, quota=20)
-    assert_equal(len(retrieved), 20)
-    assert_equal(visited, 5)
-
-    retrieved, visited = searcher.search(q, quota=20, limit=10)
-    assert_equal(len(retrieved), 10)
-    assert_equal(visited, 5)
+    # Test add_codes
+    searcher = LOPQSearcher(m)
+    codes = [m.predict(x) for x in data]
+    searcher.add_codes(codes)
+    test_searcher_instance(searcher, q)
+    

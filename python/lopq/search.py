@@ -131,6 +131,24 @@ class LOPQSearcher(object):
 
         self.index = reduce(merge_dicts, index_dicts, self.index)
 
+    def add_codes(self, codes, ids=None):
+        """
+        Add LOPQ codes into the search index.
+
+        :param list codes:
+            a list of LOPQ code tuples
+        :param iterable ids:
+            an optional iterable of ids for each code;
+            defaults to the index of the code tuple if not provided
+        """
+        # If a list of ids is not provided, assume it is the index of the data
+        if ids is None:
+            ids = range(len(codes))
+
+        for item_id, code in zip(ids, codes):
+            cell = code[0]
+            self.index[cell].append((item_id, code))
+
     def get_result_quota(self, x, quota=10):
         """
         Given a query vector and result quota, retrieve as many cells as necessary
