@@ -79,14 +79,7 @@ def multisequence(x, centroids):
                 heapq.heappush(h, (dist, c))
 
 
-class LOPQSearcher(object):
-    def __init__(self, model):
-        """
-        Create an LOPQSearcher instance that encapsulates retrieving and ranking
-        with LOPQ. Requires an LOPQModel instance.
-        """
-        self.model = model
-        self.index = defaultdict(list)
+class LOPQSearcherBase(object):
 
     def add_data(self, data, ids=None, num_procs=1):
         """
@@ -120,31 +113,6 @@ class LOPQSearcher(object):
 
         for item_id, code in zip(ids, codes):
             self.add_index_item(item_id, code)
-
-    def add_index_item(self, item_id, code):
-        """
-        Add an item to the index.
-
-        :param item_id:
-            a id for this item
-        :type item_id: any desired type to index
-        :param tuple code:
-            a LOPQ code tuple
-        """
-        cell = code[0]
-        self.index[cell].append((item_id, code))
-
-    def get_cell(self, cell):
-        """
-        Retrieve a cell bucket from the index.
-
-        :param tuple cell:
-            a cell tuple
-
-        :returns list:
-            the list of index items in this cell bucket
-        """
-        return self.index[cell]
 
     def get_result_quota(self, x, quota=10):
         """
@@ -255,3 +223,62 @@ class LOPQSearcher(object):
             results = map(lambda d: Result(d[1][0], d[1]), results)
 
         return results, visited
+
+    def add_index_item(self, item_id, code):
+        """
+        Add an item to the index.
+
+        :param item_id:
+            a id for this item
+        :type item_id: any desired type to index
+        :param tuple code:
+            a LOPQ code tuple
+        """
+        raise NotImplementedError()
+
+    def get_cell(self, cell):
+        """
+        Retrieve a cell bucket from the index.
+
+        :param tuple cell:
+            a cell tuple
+
+        :returns list:
+            the list of index items in this cell bucket
+        """
+        raise NotImplementedError()
+
+class LOPQSearcher(LOPQSearcherBase):
+    def __init__(self, model):
+        """
+        Create an LOPQSearcher instance that encapsulates retrieving and ranking
+        with LOPQ. Requires an LOPQModel instance.
+        """
+        self.model = model
+        self.index = defaultdict(list)
+
+    def add_index_item(self, item_id, code):
+        """
+        Add an item to the index.
+
+        :param item_id:
+            a id for this item
+        :type item_id: any desired type to index
+        :param tuple code:
+            a LOPQ code tuple
+        """
+        cell = code[0]
+        self.index[cell].append((item_id, code))
+
+    def get_cell(self, cell):
+        """
+        Retrieve a cell bucket from the index.
+
+        :param tuple cell:
+            a cell tuple
+
+        :returns list:
+            the list of index items in this cell bucket
+        """
+        return self.index[cell]
+
