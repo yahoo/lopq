@@ -2,8 +2,9 @@
 # Licensed under the terms of the Apache License, Version 2.0. See the LICENSE file associated with the project for terms.
 import heapq
 from collections import defaultdict, namedtuple
+from itertools import count
 import numpy as np
-from .utils import iterate_splits, parmap, get_chunk_ranges
+from .utils import iterate_splits, compute_codes_parallel
 
 
 def multisequence(x, centroids):
@@ -100,54 +101,50 @@ class LOPQSearcher(object):
             an integer specifying the number of processes to use to
             compute codes for the data
         """
-        N = data.shape[0]
-
-        # If a list of ids is not provided, assume it is the index of the data
-        if ids is None:
-            ids = range(N)
-
-        # function to index a partition of the data
-        def index_partition(work):
-            from collections import defaultdict
-
-            data, ids = work
-            index = defaultdict(list)
-            for item_id, d in zip(ids, data):
-                code = self.model.predict(d)
-                cell = code[0]
-                index[cell].append((item_id, code))
-            return index
-
-        def merge_dicts(a, b):
-            for k, v in b.iteritems():
-                a[k] += v
-            return a
-
-        if num_procs > 1:
-            tasks = [(data[a:b], ids[a:b]) for a, b in get_chunk_ranges(N, num_procs)]
-            index_dicts = parmap(index_partition, tasks, num_procs)
-        else:
-            index_dicts = map(index_partition, [(data, ids)])
-
-        self.index = reduce(merge_dicts, index_dicts, self.index)
+        codes = compute_codes_parallel(data, self.model, num_procs)
+        self.add_codes(codes, ids)
 
     def add_codes(self, codes, ids=None):
         """
         Add LOPQ codes into the search index.
 
-        :param list codes:
-            a list of LOPQ code tuples
+        :param iterable codes:
+            an iterable of LOPQ code tuples
         :param iterable ids:
             an optional iterable of ids for each code;
             defaults to the index of the code tuple if not provided
         """
         # If a list of ids is not provided, assume it is the index of the data
         if ids is None:
-            ids = range(len(codes))
+            ids = count()
 
         for item_id, code in zip(ids, codes):
-            cell = code[0]
-            self.index[cell].append((item_id, code))
+            self.add_index_item(item_id, code)
+
+    def add_index_item(self, item_id, code):
+        """
+        Add an item to the index.
+
+        :param item_id:
+            a id for this item
+        :type item_id: any desired type to index
+        :param tuple code:
+            a LOPQ code tuple
+        """
+        cell = code[0]
+        self.index[cell].append((item_id, code))
+
+    def get_cell(self, cell):
+        """
+        Retrieve a cell bucket from the index.
+
+        :param tuple cell:
+            a cell tuple
+
+        :returns list:
+            the list of index items in this cell bucket
+        """
+        return self.index[cell]
 
     def get_result_quota(self, x, quota=10):
         """
@@ -167,10 +164,7 @@ class LOPQSearcher(object):
         retrieved = []
         visited = 0
         for _, cell in multisequence(x, self.model.Cs):
-            if cell not in self.index:
-                continue
-
-            retrieved += self.index[cell]
+            retrieved += self.get_cell(cell)
             visited += 1
 
             if len(retrieved) >= quota:

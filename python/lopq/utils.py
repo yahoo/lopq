@@ -2,6 +2,7 @@
 # Licensed under the terms of the Apache License, Version 2.0. See the LICENSE file associated with the project for terms.
 import numpy as np
 import multiprocessing
+from itertools import chain
 
 
 def iterate_splits(x, splits):
@@ -156,3 +157,28 @@ def get_chunk_ranges(N, num_procs):
     data_ranges = [0] + reduce(lambda acc, num: acc + [num + (acc[-1] if len(acc) else 0)], allocation, [])
     data_ranges = [(data_ranges[i], data_ranges[i + 1]) for i in range(len(data_ranges) - 1)]
     return data_ranges
+
+
+def compute_codes_parallel(data, model, num_procs=4):
+    """
+    A helper function that parallelizes the computation of LOPQ codes in 
+    a configurable number of processes.
+
+    :param ndarray data:
+        an ndarray of data points
+    :param LOPQModel model:
+        a model instance to use to compute codes
+    :param int num_procs:
+        the number of processes to spawn
+
+    :returns iterable:
+        an iterable of computed codes in the input order
+    """
+    def compute_partition(data):
+        return [model.predict(d) for d in data]
+
+    N = len(data)
+    partitions = [data[a:b] for a, b in get_chunk_ranges(N, num_procs)]
+    codes = parmap(compute_partition, partitions, num_procs)
+
+    return chain(*codes)
