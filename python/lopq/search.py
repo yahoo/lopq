@@ -97,23 +97,6 @@ class LOPQSearcherBase(object):
         codes = compute_codes_parallel(data, self.model, num_procs)
         self.add_codes(codes, ids)
 
-    def add_codes(self, codes, ids=None):
-        """
-        Add LOPQ codes into the search index.
-
-        :param iterable codes:
-            an iterable of LOPQ code tuples
-        :param iterable ids:
-            an optional iterable of ids for each code;
-            defaults to the index of the code tuple if not provided
-        """
-        # If a list of ids is not provided, assume it is the index of the data
-        if ids is None:
-            ids = count()
-
-        for item_id, code in zip(ids, codes):
-            self.add_index_item(item_id, code)
-
     def get_result_quota(self, x, quota=10):
         """
         Given a query vector and result quota, retrieve as many cells as necessary
@@ -224,15 +207,15 @@ class LOPQSearcherBase(object):
 
         return results, visited
 
-    def add_index_item(self, item_id, code):
+    def add_codes(self, codes, ids=None):
         """
-        Add an item to the index.
+        Add LOPQ codes into the search index.
 
-        :param item_id:
-            a id for this item
-        :type item_id: any desired type to index
-        :param tuple code:
-            a LOPQ code tuple
+        :param iterable codes:
+            an iterable of LOPQ code tuples
+        :param iterable ids:
+            an optional iterable of ids for each code;
+            defaults to the index of the code tuple if not provided
         """
         raise NotImplementedError()
 
@@ -252,23 +235,29 @@ class LOPQSearcher(LOPQSearcherBase):
     def __init__(self, model):
         """
         Create an LOPQSearcher instance that encapsulates retrieving and ranking
-        with LOPQ. Requires an LOPQModel instance.
+        with LOPQ. Requires an LOPQModel instance. This class uses a Python dict
+        to implement the index.
         """
         self.model = model
         self.index = defaultdict(list)
 
-    def add_index_item(self, item_id, code):
+    def add_codes(self, codes, ids=None):
         """
-        Add an item to the index.
+        Add LOPQ codes into the search index.
 
-        :param item_id:
-            a id for this item
-        :type item_id: any desired type to index
-        :param tuple code:
-            a LOPQ code tuple
+        :param iterable codes:
+            an iterable of LOPQ code tuples
+        :param iterable ids:
+            an optional iterable of ids for each code;
+            defaults to the index of the code tuple if not provided
         """
-        cell = code[0]
-        self.index[cell].append((item_id, code))
+        # If a list of ids is not provided, assume it is the index of the data
+        if ids is None:
+            ids = count()
+
+        for item_id, code in zip(ids, codes):
+            cell = code[0]
+            self.index[cell].append((item_id, code))
 
     def get_cell(self, cell):
         """
@@ -281,4 +270,3 @@ class LOPQSearcher(LOPQSearcherBase):
             the list of index items in this cell bucket
         """
         return self.index[cell]
-
