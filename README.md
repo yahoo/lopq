@@ -1,7 +1,7 @@
 
 [![Build Status](https://travis-ci.org/yahoo/lopq.svg?branch=master)](https://travis-ci.org/yahoo/lopq)
-
 [![Coverage Status](https://coveralls.io/repos/yahoo/lopq/badge.svg?branch=master&service=github)](https://coveralls.io/github/yahoo/lopq?branch=master)
+[![PyPI version](https://badge.fury.io/py/lopq.svg)](https://badge.fury.io/py/lopq)
 
 # Locally Optimized Product Quantization
 
