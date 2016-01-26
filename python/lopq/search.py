@@ -2,8 +2,10 @@
 # Licensed under the terms of the Apache License, Version 2.0. See the LICENSE file associated with the project for terms.
 import heapq
 from collections import defaultdict, namedtuple
+from itertools import count
 import numpy as np
-from .utils import iterate_splits, parmap, get_chunk_ranges
+import array
+from .utils import iterate_splits, compute_codes_parallel
 
 
 def multisequence(x, centroids):
@@ -78,14 +80,7 @@ def multisequence(x, centroids):
                 heapq.heappush(h, (dist, c))
 
 
-class LOPQSearcher(object):
-    def __init__(self, model):
-        """
-        Create an LOPQSearcher instance that encapsulates retrieving and ranking
-        with LOPQ. Requires an LOPQModel instance.
-        """
-        self.model = model
-        self.index = defaultdict(list)
+class LOPQSearcherBase(object):
 
     def add_data(self, data, ids=None, num_procs=1):
         """
@@ -100,36 +95,8 @@ class LOPQSearcher(object):
             an integer specifying the number of processes to use to
             compute codes for the data
         """
-        N = data.shape[0]
-
-        # If a list of ids is not provided, assume it is the index of the data
-        if ids is None:
-            ids = range(N)
-
-        # function to index a partition of the data
-        def index_partition(work):
-            from collections import defaultdict
-
-            data, ids = work
-            index = defaultdict(list)
-            for item_id, d in zip(ids, data):
-                code = self.model.predict(d)
-                cell = code[0]
-                index[cell].append((item_id, code))
-            return index
-
-        def merge_dicts(a, b):
-            for k, v in b.iteritems():
-                a[k] += v
-            return a
-
-        if num_procs > 1:
-            tasks = [(data[a:b], ids[a:b]) for a, b in get_chunk_ranges(N, num_procs)]
-            index_dicts = parmap(index_partition, tasks, num_procs)
-        else:
-            index_dicts = map(index_partition, [(data, ids)])
-
-        self.index = reduce(merge_dicts, index_dicts, self.index)
+        codes = compute_codes_parallel(data, self.model, num_procs)
+        self.add_codes(codes, ids)
 
     def get_result_quota(self, x, quota=10):
         """
@@ -149,10 +116,7 @@ class LOPQSearcher(object):
         retrieved = []
         visited = 0
         for _, cell in multisequence(x, self.model.Cs):
-            if cell not in self.index:
-                continue
-
-            retrieved += self.index[cell]
+            retrieved += self.get_cell(cell)
             visited += 1
 
             if len(retrieved) >= quota:
@@ -202,7 +166,7 @@ class LOPQSearcher(object):
 
         return results
 
-    def search(self, x, quota=10, with_dists=False):
+    def search(self, x, quota=10, limit=None, with_dists=False):
         """
         Return euclidean distance ranked results, along with the number of cells
         traversed to fill the quota.
@@ -210,7 +174,9 @@ class LOPQSearcher(object):
         :param ndarray x:
             a query vector
         :param int quota:
-            the number of desired results
+            the number of desired results to rank
+        :param int limit:
+            the number of desired results to return - defaults to quota
         :param bool with_dists:
             boolean indicating whether result items should be returned with their distance
 
@@ -228,6 +194,11 @@ class LOPQSearcher(object):
         # Sort by distance
         results = sorted(results, key=lambda d: d[0])
 
+        # Limit number returned
+        if limit is None:
+            limit = quota
+        results = results[:limit]
+
         if with_dists:
             Result = namedtuple('Result', ['id', 'code', 'dist'])
             results = map(lambda d: Result(d[1][0], d[1][1], d[0]), results)
@@ -236,3 +207,163 @@ class LOPQSearcher(object):
             results = map(lambda d: Result(d[1][0], d[1]), results)
 
         return results, visited
+
+    def add_codes(self, codes, ids=None):
+        """
+        Add LOPQ codes into the search index.
+
+        :param iterable codes:
+            an iterable of LOPQ code tuples
+        :param iterable ids:
+            an optional iterable of ids for each code;
+            defaults to the index of the code tuple if not provided
+        """
+        raise NotImplementedError()
+
+    def get_cell(self, cell):
+        """
+        Retrieve a cell bucket from the index.
+
+        :param tuple cell:
+            a cell tuple
+
+        :returns list:
+            the list of index items in this cell bucket
+        """
+        raise NotImplementedError()
+
+class LOPQSearcher(LOPQSearcherBase):
+    def __init__(self, model):
+        """
+        Create an LOPQSearcher instance that encapsulates retrieving and ranking
+        with LOPQ. Requires an LOPQModel instance. This class uses a Python dict
+        to implement the index.
+
+        :param LOPQModel model:
+            the model for indexing and ranking
+        """
+        self.model = model
+        self.index = defaultdict(list)
+
+    def add_codes(self, codes, ids=None):
+        """
+        Add LOPQ codes into the search index.
+
+        :param iterable codes:
+            an iterable of LOPQ code tuples
+        :param iterable ids:
+            an optional iterable of ids for each code;
+            defaults to the index of the code tuple if not provided
+        """
+        # If a list of ids is not provided, assume it is the index of the data
+        if ids is None:
+            ids = count()
+
+        for item_id, code in zip(ids, codes):
+            cell = code[0]
+            self.index[cell].append((item_id, code))
+
+    def get_cell(self, cell):
+        """
+        Retrieve a cell bucket from the index.
+
+        :param tuple cell:
+            a cell tuple
+
+        :returns list:
+            the list of index items in this cell bucket
+        """
+        return self.index[cell]
+
+
+class LOPQSearcherLMDB(LOPQSearcherBase):
+    def __init__(self, model, lmdb_path, id_lambda=int):
+        """
+        Create an LOPQSearcher instance that encapsulates retrieving and ranking
+        with LOPQ. Requires an LOPQModel instance. This class uses an lmbd database
+        to implement the index.
+
+        :param LOPQModel model:
+            the model for indexing and ranking
+        :param str lmdb_path:
+            path for the lmdb database; if it does not exist it is created
+        :param callable id_lambda:
+            a lambda function to reconstruct item ids from their string representation
+            (computed by calling `bytes`) during retrieval
+        """
+        import lmdb
+
+        self.model = model
+        self.lmdb_path = lmdb_path
+        self.id_lambda = id_lambda
+
+        self.env = lmdb.open(self.lmdb_path, map_size=1024*2000000*2, writemap=False, map_async=True, max_dbs=1)
+        self.index_db = self.env.open_db("index")
+
+    def encode_cell(self, cell):
+        return array.array("H", cell).tostring()
+
+    def decode_cell(self, cell_bytes):
+        a = array.array("H")
+        a.fromstring(cell_bytes)
+        return tuple(a.tolist())
+
+    def encode_fine_codes(self, fine):
+        return array.array("B", fine).tostring()
+
+    def decode_fine_codes(self, fine_bytes):
+        a = array.array("B")
+        a.fromstring(fine_bytes)
+        return tuple(a.tolist())
+
+    def add_codes(self, codes, ids=None):
+        """
+        Add LOPQ codes into the search index.
+
+        :param iterable codes:
+            an iterable of LOPQ code tuples
+        :param iterable ids:
+            an optional iterable of ids for each code;
+            defaults to the index of the code tuple if not provided
+        """
+        # If a list of ids is not provided, assume it is the index of the data
+        if ids is None:
+            ids = count()
+
+        with self.env.begin(db=self.index_db, write=True) as txn:
+            for item_id, code in zip(ids, codes):
+                key_prefix = self.encode_cell(code[0])
+                key_suffix = bytes(item_id)
+                key = key_prefix + key_suffix
+                val = self.encode_fine_codes(code[1])
+                txn.put(key, val)
+        self.env.sync()
+
+    def get_cell(self, cell):
+        """
+        Retrieve a cell bucket from the index.
+
+        :param tuple cell:
+            a cell tuple
+
+        :returns list:
+            the list of index items in this cell bucket
+        """
+        prefix = self.encode_cell(cell)
+
+        items = []
+        with self.env.begin(db=self.index_db) as txn:
+            cursor = txn.cursor()
+            cursor.set_range(prefix)
+            for key, value in cursor:
+                if not key.startswith(prefix):
+                    break
+                else:
+                    item_id = self.id_lambda(key[4:])
+                    cell = self.decode_cell(key[:4])
+                    fine = self.decode_fine_codes(value)
+                    code = (cell, fine)
+                    items.append((item_id, code))
+            cursor.close()
+
+        return items

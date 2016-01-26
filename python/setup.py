@@ -83,7 +83,7 @@ setup_arguments = {
     },
     'platforms': 'Windows,Linux,Solaris,Mac OS-X,Unix',
     'include_package_data': True,
-    'install_requires': ['protobuf>=2.6', 'numpy>=1.10', 'scipy>=0.15', 'scikit-learn>=0.15']
+    'install_requires': ['protobuf>=2.6', 'numpy>=1.10', 'scipy>=0.15', 'scikit-learn>=0.15', 'lmdb>=0.87']
 }
 
 

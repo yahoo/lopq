@@ -10,7 +10,7 @@ from sklearn.cross_validation import train_test_split
 
 sys.path.insert(1, os.path.abspath('..'))
 from lopq.model import LOPQModel, eigenvalue_allocation, accumulate_covariance_estimators, compute_rotations_from_accumulators
-from lopq.search import LOPQSearcher
+from lopq.search import LOPQSearcher, LOPQSearcherLMDB
 from lopq.eval import compute_all_neighbors, get_cell_histogram, get_recall
 
 ########################################
@@ -203,19 +203,72 @@ def test_mat():
     os.remove(filename)
 
 
-def test_searcher():
-    data = pkl.load(open(relpath('./testdata/test_searcher_data.pkl')))
-    m = LOPQModel.load_proto(relpath('./testdata/random_test_model.lopq'))
-
-    searcher = LOPQSearcher(m)
-    searcher.add_data(data)
-
-    q = np.ones(8)
-
+def searcher_instance_battery(searcher, q):
+    """
+    Helper to perform battery of searcher tests.
+    """
     retrieved, visited = searcher.get_result_quota(q)
     assert_equal(len(retrieved), 12)
+    assert_equal(visited, 3)
+
+    retrieved, visited = searcher.search(q)
+    assert_equal(len(retrieved), 10)
     assert_equal(visited, 3)
 
     retrieved, visited = searcher.get_result_quota(q, quota=20)
     assert_equal(len(retrieved), 28)
     assert_equal(visited, 5)
+
+    retrieved, visited = searcher.search(q, quota=20)
+    assert_equal(len(retrieved), 20)
+    assert_equal(visited, 5)
+
+    retrieved, visited = searcher.search(q, quota=20, limit=10)
+    assert_equal(len(retrieved), 10)
+    assert_equal(visited, 5)
+
+
+def test_searcher():
+    data = pkl.load(open(relpath('./testdata/test_searcher_data.pkl')))
+    m = LOPQModel.load_proto(relpath('./testdata/random_test_model.lopq'))
+
+    q = np.ones(8)
+
+    # Test add_data
+    searcher = LOPQSearcher(m)
+    searcher.add_data(data)
+    searcher_instance_battery(searcher, q)
+
+    # Test add_codes
+    searcher = LOPQSearcher(m)
+    codes = [m.predict(x) for x in data]
+    searcher.add_codes(codes)
+    searcher_instance_battery(searcher, q)
+
+
+def test_searcher_lmdb():
+    import shutil
+
+    data = pkl.load(open(relpath('./testdata/test_searcher_data.pkl')))
+    m = LOPQModel.load_proto(relpath('./testdata/random_test_model.lopq'))
+
+    lmbd_test_path = './test_lopq_lmbd'
+    q = np.ones(8)
+
+    # Test add_data
+    searcher = LOPQSearcherLMDB(m, lmbd_test_path)
+    searcher.add_data(data)
+    searcher_instance_battery(searcher, q)
+
+    # Clean up
+    shutil.rmtree(lmbd_test_path)
+
+    # Test add_codes
+    searcher = LOPQSearcherLMDB(m, lmbd_test_path)
+    codes = [m.predict(x) for x in data]
+    searcher.add_codes(codes)
+    searcher_instance_battery(searcher, q)
+
+    # Clean up
+    shutil.rmtree(lmbd_test_path)
+
