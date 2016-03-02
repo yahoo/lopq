@@ -8,9 +8,11 @@ The following usage examples assume that you have a well configured Spark enviro
 
 ## PCA Training
 
-A necessary preprocessing step for training is to PCA and variance balance the raw data vectors to produce the LOPQ data vectors, i.e. the vectors that LOPQ will quantize. The PCA step is important because it axis-aligns the data and optionally reduces the dimensionality, resulting in better quantization. The variance balancing step permutes the dimensions of the PCA'd vectors so that the first half and second half of the data vectors have roughly the same total variance, which makes the LOPQ coarse codes much better at quantizing the data since each half will be equally "important".
+A recommended preprocessing step for training is to PCA and variance balance the raw data vectors to produce the LOPQ data vectors, i.e. the vectors that LOPQ will quantize. The PCA step is important because it axis-aligns the data and optionally reduces the dimensionality, resulting in better quantization. The variance balancing step permutes the dimensions of the PCA'd vectors so that the first half and second half of the data vectors have roughly the same total variance, which makes the LOPQ coarse codes much better at quantizing the data since each half will be equally "important". The benefit of PCA, dimensionality reduction, and variance balancing in terms of retrieval performance of the downstream LOPQ model will vary based on the data, but it has been seen to provide considerable improvements in many contexts.
 
-The `train_pca.py` script is provided to compute PCA parameters on Spark. It will output a pickled dict of PCA parameters. See discussion of data handling in the LOPQ Training section below to learn about loading custom data formats.
+The `train_pca.py` script is provided to compute PCA parameters on Spark. It will output a pickled dict of PCA parameters - refer to `train_pca.py` for the contents of this dict. See discussion of data handling in the LOPQ Training section below to learn about loading custom data formats.
+
+After the PCA parameters are computed, the PCA matrix must be truncated to the desired final dimension and the two halves must be variance balanced by permuting the PCA matrix. The `pca_preparation.py` script is provided to do these two preparation steps. Afterwards the training data can be transformed before LOPQ training, perhaps via a data UDF (discussed below).
 
 #### Available parameters
 

@@ -61,11 +61,11 @@ def main(sc, args, data_load_fn=default_data_loading):
     E, P = np.linalg.eigh(A)
 
     params = {
-        'mu': mu,
-        'P': P,
-        'E': E,
-        'A': A,
-        'c': count
+        'mu': mu,   # mean
+        'P': P,     # PCA matrix
+        'E': E,     # eigenvalues
+        'A': A,     # covariance matrix
+        'c': count  # sample size
     }
 
     save_hdfs_pickle(params, args.output)
