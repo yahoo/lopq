@@ -26,7 +26,7 @@ t = LOPQClusterServer(c, port=33685)
 t.start()
 
 # Stop the cluster server and the cluster:
-t.stop()
+t.shutdown()
 c.stop()
 ```
 """
