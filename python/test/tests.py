@@ -272,3 +272,23 @@ def test_searcher_lmdb():
     # Clean up
     shutil.rmtree(lmbd_test_path)
 
+
+def test_proto_partial():
+    import os
+
+    filename = './temp_proto_partial.lopq'
+    c = (np.random.rand(8, 8), np.random.rand(8,8))
+    m = LOPQModel(parameters=(c, None, None, None))
+    m.export_proto(filename)
+    m2 = LOPQModel.load_proto(filename)
+
+    assert_equal(m.V, m2.V)
+    assert_equal(m.M, m2.M)
+    assert_equal(m.subquantizer_clusters, m2.subquantizer_clusters)
+
+    assert_true(np.allclose(m.Cs[0], m2.Cs[0]))
+    assert_true(m.Rs == m2.Rs)
+    assert_true(m.mus == m2.mus)
+    assert_true(m.subquantizers ==  m.subquantizers)
+
+    os.remove(filename)

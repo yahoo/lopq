@@ -716,14 +716,18 @@ class LOPQModel(object):
             m.values.extend(map(float, np.nditer(a, order='C')))
             return m
 
-        for C in self.Cs:
-            matrix_from_ndarray(lopq_params.Cs.add(), C)
-        for R in chain(*self.Rs):
-            matrix_from_ndarray(lopq_params.Rs.add(), R)
-        for mu in chain(*self.mus):
-            vector_from_ndarray(lopq_params.mus.add(), mu)
-        for sub in chain(*self.subquantizers):
-            matrix_from_ndarray(lopq_params.subs.add(), sub)
+        if self.Cs != None:
+            for C in self.Cs:
+                matrix_from_ndarray(lopq_params.Cs.add(), C)
+        if self.Rs != None:
+            for R in chain(*self.Rs):
+                matrix_from_ndarray(lopq_params.Rs.add(), R)
+        if self.mus != None:
+            for mu in chain(*self.mus):
+                vector_from_ndarray(lopq_params.mus.add(), mu)
+        if self.subquantizers != None:
+            for sub in chain(*self.subquantizers):
+                matrix_from_ndarray(lopq_params.subs.add(), sub)
 
         if type(f) is str:
             f = open(f, 'wb')
@@ -748,10 +752,15 @@ class LOPQModel(object):
             lopq_params.ParseFromString(f.read())
             f.close()
 
-            Cs = [np.reshape(C.values, C.shape) for C in lopq_params.Cs]
-            Rs = map(concat_new_first, halves([np.reshape(R.values, R.shape) for R in lopq_params.Rs]))
-            mus = map(concat_new_first, halves([np.array(mu.values) for mu in lopq_params.mus]))
-            subs = halves([np.reshape(sub.values, sub.shape) for sub in lopq_params.subs])
+            Cs = Rs = mus = subs = None
+            if len(lopq_params.Cs) != 0:
+                Cs = [np.reshape(C.values, C.shape) for C in lopq_params.Cs]
+            if len(lopq_params.Rs) != 0:
+                Rs = map(concat_new_first, halves([np.reshape(R.values, R.shape) for R in lopq_params.Rs]))
+            if len(lopq_params.mus) != 0:
+                mus = map(concat_new_first, halves([np.array(mu.values) for mu in lopq_params.mus]))
+            if len(lopq_params.subs) != 0:
+                subs = halves([np.reshape(sub.values, sub.shape) for sub in lopq_params.subs])
 
             return LOPQModel(parameters=(Cs, Rs, mus, subs))
 
