@@ -36,7 +36,7 @@ More information and performance benchmarks can be found at http://image.ntua.gr
 
 1. Y. Kalantidis, Y. Avrithis. [Locally Optimized Product Quantization for Approximate Nearest Neighbor Search.](http://image.ntua.gr/iva/files/lopq.pdf) CVPR 2014.
 2. H. Jegou, M. Douze, and C. Schmid. [Product quantization for nearest neighbor search.](https://lear.inrialpes.fr/pubs/2011/JDS11/jegou_searching_with_quantization.pdf) PAMI, 33(1), 2011.
-3. A. Babenko and V. Lempitsky. [The inverted multi-index.](http://www.computer.org/csdl/trans/tp/preprint/06915715.pdf) CVPR 2012.
+3. A. Babenko and V. Lempitsky. [The inverted multi-index.](http://cache-ash04.cdn.yandex.net/download.yandex.ru/company/cvpr2012.pdf) CVPR 2012.
 
 ### Python
 
