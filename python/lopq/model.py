@@ -399,7 +399,7 @@ LOPQCode = namedtuple('LOPQCode', ['coarse', 'fine'])
 
 
 class LOPQModel(object):
-    def __init__(self, V=8, M=4, subquantizer_clusters=256, n_jobs=1, parameters=None):
+    def __init__(self, V=8, M=4, subquantizer_clusters=256, parameters=None):
         """
         Create an LOPQModel instance that encapsulates a complete LOPQ model with parameters and hyperparameters.
 
@@ -409,8 +409,6 @@ class LOPQModel(object):
             the total number of subvectors (equivalent to the total number of subquantizers)
         :param int subquantizer_clusters:
             the number of clusters for each subquantizer
-        :param int n_jobs:
-            the number of jobs to use for KMeans cluster computation
         :param tuple parameters:
             a tuple of parameters - missing parameters are allowed to be None
 
@@ -450,7 +448,7 @@ class LOPQModel(object):
 
         self.n_jobs = n_jobs
 
-    def fit(self, data, kmeans_coarse_iters=10, kmeans_local_iters=20, n_init=10, subquantizer_sample_ratio=1.0, random_state=None, verbose=False):
+    def fit(self, data, kmeans_coarse_iters=10, kmeans_local_iters=20, n_init=10, subquantizer_sample_ratio=1.0, random_state=None, verbose=False, n_jobs=1):
         """
         Fit a model with the current model parameters. This method will use existing parameters and only
         train missing parameters.
@@ -468,6 +466,8 @@ class LOPQModel(object):
             a random seed used in all random operations during training if provided
         :param bool verbose:
             a bool enabling verbose output during training
+        :param int n_jobs:
+            the number of jobs to use for KMeans cluster computation
         """
         existing_parameters = (self.Cs, self.Rs, self.mus, self.subquantizers)
 
