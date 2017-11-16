@@ -446,8 +446,6 @@ class LOPQModel(object):
             self.M = M
             self.subquantizer_clusters = subquantizer_clusters
 
-        self.n_jobs = n_jobs
-
     def fit(self, data, kmeans_coarse_iters=10, kmeans_local_iters=20, n_init=10, subquantizer_sample_ratio=1.0, random_state=None, verbose=False, n_jobs=1):
         """
         Fit a model with the current model parameters. This method will use existing parameters and only
@@ -473,7 +471,7 @@ class LOPQModel(object):
 
         parameters = train(data, self.V, self.M, self.subquantizer_clusters, existing_parameters,
                            kmeans_coarse_iters, kmeans_local_iters, n_init, subquantizer_sample_ratio,
-                           random_state, verbose, self.n_jobs)
+                           random_state, verbose, n_jobs)
 
         self.Cs, self.Rs, self.mus, self.subquantizers = parameters
 
