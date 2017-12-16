@@ -6,7 +6,7 @@ import pickle as pkl
 import sys
 import os
 import numpy as np
-from sklearn.cross_validation import train_test_split
+from sklearn.model_selection import train_test_split
 
 sys.path.insert(1, os.path.abspath('..'))
 from lopq.model import LOPQModel, eigenvalue_allocation, accumulate_covariance_estimators, compute_rotations_from_accumulators
